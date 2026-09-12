@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import { fileURLToPath } from "node:url";
 import router from "./routes";
 import { analysisResponseSchema } from "./lib/analyze-schema";
 import { logger } from "./lib/logger";
@@ -34,6 +35,21 @@ app.use(express.json({ limit: "4mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+// Vercel's catch-all function can pass the path with or without the /api
+// prefix depending on the platform adapter. Supporting both keeps the API
+// portable without changing the browser contract.
+app.use(router);
+
+if (process.env.SERVE_FRONTEND === "true") {
+  const frontendDist = fileURLToPath(
+    new URL("../../wasteless/dist/public", import.meta.url),
+  );
+
+  app.use(express.static(frontendDist));
+  app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
+    res.sendFile(fileURLToPath(new URL("../../wasteless/dist/public/index.html", import.meta.url)));
+  });
+}
 
 app.use(
   (

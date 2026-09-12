@@ -2,12 +2,16 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
+  "packageManager": "pnpm@10.26.1",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "test": "pnpm --filter @workspace/api-server run test && pnpm --filter @workspace/wasteless run test",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --if-present run typecheck",
+    "build:frontend": "pnpm --filter @workspace/wasteless run build",
+    "build:api": "pnpm --filter @workspace/api-server run build",
+    "build:render": "pnpm run build:frontend && pnpm run build:api"
   },
   "private": true,
   "dependencies": {},
