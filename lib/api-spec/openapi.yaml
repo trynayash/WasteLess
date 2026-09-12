@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: analysis
+    description: WasteLess image analysis
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /analyze:
+    post:
+      operationId: analyzeImage
+      tags: [analysis]
+      summary: Analyze an uploaded image
+      description: Accepts a resized image and returns a validated WasteLess recommendation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeImageInput"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+        "400":
+          description: Invalid request body or unsupported image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeFailure"
+        "413":
+          description: Decoded image is too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeFailure"
+        "502":
+          description: Vision provider could not analyze the image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeFailure"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    AnalyzeImageInput:
+      type: object
+      required:
+        - image
+        - media_type
+      properties:
+        image:
+          type: string
+          format: byte
+          description: Resized image as a base64 data URL.
+        media_type:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+    AnalyzeResponse:
+      oneOf:
+        - $ref: "#/components/schemas/AnalyzeSuccess"
+        - $ref: "#/components/schemas/AnalyzeFailure"
+    AnalyzeSuccess:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/IdentifiedAnalysis"
+            - $ref: "#/components/schemas/UnidentifiedAnalysis"
+    AnalyzeFailure:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: string
+    UnidentifiedAnalysis:
+      type: object
+      required:
+        - identified
+        - reason
+      properties:
+        identified:
+          type: boolean
+          const: false
+        reason:
+          type: string
+    IdentifiedAnalysis:
+      type: object
+      required:
+        - item
+        - material
+        - identified
+        - best_option
+        - reason
+        - condition_check
+        - steps
+        - other_options
+        - creative_ideas
+        - recipient_type
+        - warning
+      properties:
+        item:
+          type: string
+        material:
+          type: string
+        identified:
+          type: boolean
+          const: true
+        best_option:
+          type: string
+          enum: [reuse, donate, sell, recycle]
+        reason:
+          type: string
+        condition_check:
+          $ref: "#/components/schemas/ConditionCheck"
+        steps:
+          type: array
+          minItems: 3
+          maxItems: 5
+          items:
+            type: string
+        other_options:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/OtherOption"
+        creative_ideas:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/CreativeIdea"
+        recipient_type:
+          type: ["string", "null"]
+        warning:
+          type: ["string", "null"]
+    ConditionCheck:
+      type: object
+      required:
+        - question
+        - if_good
+        - if_bad
+      properties:
+        question:
+          type: string
+        if_good:
+          type: string
+        if_bad:
+          type: string
+    OtherOption:
+      type: object
+      required:
+        - type
+        - title
+        - note
+      properties:
+        type:
+          type: string
+          enum: [reuse, donate, sell, recycle]
+        title:
+          type: string
+        note:
+          type: string
+    CreativeIdea:
+      type: object
+      required:
+        - title
+        - effort
+      properties:
+        title:
+          type: string
+        effort:
+          type: string
+          enum: [easy, medium, involved]
