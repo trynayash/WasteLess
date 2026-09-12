@@ -48,10 +48,6 @@ Thumbs.db
 .cache/
 .local/
 
-# Workspace-only metadata
-/.replit
-/.replitignore
-**/.replit-artifact/
 
 # Local packaging
 *.zip
